@@ -21,7 +21,7 @@ public class Main {
                 logger.error("sleep was interrupted");
             }
             if(desc.getStreamStatus().equals(desiredState)) return desc;
-            if(! desc.getStreamStatus().equals("CREATING") && ! desc.getStreamStatus().equals("ACTIVE")){
+            if(! desc.getStreamStatus().endsWith("ING")){
                 if(throwOnError) throw new RuntimeException("Stream creation failed with status " + desc.getStreamStatus());
                 return null;
             }
@@ -63,13 +63,29 @@ public class Main {
 
         logger.info("Starting up " + threads + " consumer threads...");
         for(int t=0;t<threads;t++){
-            RecordProcessorThread thread = new RecordProcessorThread(createdStreamName);
+            RecordProcessorThread thread = new RecordProcessorThread(createdStreamName,"eu-west-1");
             threadList[t] = thread;
-            //thread.start();
+            thread.start();
         }
 
         logger.info("Thread startup done.");
 
+        try {
+            Thread.sleep(5000);
+        } catch(InterruptedException e){
+
+        }
+
+        logger.info("Shutting down threads...");
+        for(int t=0;t<threads;t++){
+            threadList[t].interrupt();
+        }
+
         deleteTestStream(conn, createdStreamName);
+        try {
+            waitForState(conn, createdStreamName, "DELETED", true);
+        } catch(com.amazonaws.services.kinesis.model.ResourceNotFoundException e){ //this will be thrown when the stream goes away and we try to check its status
+            logger.info("Stream deleted");
+        }
     }
 }
