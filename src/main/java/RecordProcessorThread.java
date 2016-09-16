@@ -11,12 +11,17 @@ public class RecordProcessorThread extends Thread {
     public static final Logger logger= LogManager.getLogger("RecordProcessorThread");
     String streamName;
     String regionName;
+    private static Worker worker;
 
     public RecordProcessorThread(String streamName,String region)
     {
         super();
         this.streamName = streamName;
         this.regionName = region;
+    }
+
+    public void shutdown() {
+        worker.shutdown();
     }
 
     public void run() {
@@ -31,15 +36,12 @@ public class RecordProcessorThread extends Thread {
         ).withRegionName(regionName);
 
         final IRecordProcessorFactory recordProcessorFactory = new TestRecordProcessorFactory();
-        final Worker worker = new Worker.Builder()
+        worker = new Worker.Builder()
                 .recordProcessorFactory(recordProcessorFactory)
                 .config(config)
                 .build();
 
-        //try {
-            worker.run();
-//        } catch(InterruptedException e){
-//            logger.info("terminating");
-//        }
+        worker.run();
+
     }
 }

@@ -31,10 +31,6 @@ public class Main {
     public static String createTestStream(AmazonKinesis conn) {
         logger.info("Creating test stream with name " + streamName);
 
-//        CreateStreamRequest request = new CreateStreamRequest()
-//                .withStreamName(streamName)
-//                .withShardCount(threads);
-
         try {
             CreateStreamResult result = conn.createStream(streamName,threads);
         } catch(com.amazonaws.services.kinesis.model.ResourceInUseException e){
@@ -57,7 +53,6 @@ public class Main {
     public static void main(String[] args) {
         AmazonKinesis conn=AmazonKinesisClientBuilder.defaultClient();
         final String createdStreamName = createTestStream(conn);
-        //final String createdStreamName = streamName;
 
         RecordProcessorThread threadList[] = new RecordProcessorThread[threads];
 
@@ -73,12 +68,12 @@ public class Main {
         try {
             Thread.sleep(5000);
         } catch(InterruptedException e){
-
+            logger.warn("timeout interrupted");
         }
 
         logger.info("Shutting down threads...");
         for(int t=0;t<threads;t++){
-            threadList[t].interrupt();
+            threadList[t].shutdown();
         }
 
         deleteTestStream(conn, createdStreamName);
