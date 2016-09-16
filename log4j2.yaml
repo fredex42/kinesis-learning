@@ -14,7 +14,15 @@ Configuration:
       AppenderRef:
         ref: Console
     Logger:
-      - name: KinesisTest.Main
+      - name: Main
+        level: debug
+        AppenderRef:
+          ref: Console
+      - name: TestRecordProcessor
+        level: debug
+        AppenderRef:
+          ref: Console
+      - name: RecordProcessorThread
         level: debug
         AppenderRef:
           ref: Console

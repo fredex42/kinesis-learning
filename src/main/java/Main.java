@@ -5,7 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class Main {
-    public static final Logger logger= LogManager.getLogger("KinesisTest.Main");
+    public static final Logger logger= LogManager.getLogger("Main");
 
     static final int threads=1;
     static final String streamName="KinesisTestStream";
@@ -74,6 +74,14 @@ public class Main {
         logger.info("Shutting down threads...");
         for(int t=0;t<threads;t++){
             threadList[t].shutdown();
+        }
+
+        for(int t=0;t<threads;t++){
+            try {
+                threadList[t].join(10000);
+            } catch(InterruptedException e){
+                logger.warn("attempting to join thread " + t + " was interrupted");
+            }
         }
 
         deleteTestStream(conn, createdStreamName);
