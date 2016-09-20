@@ -39,7 +39,8 @@ public class Main {
         }
 
         final StreamDescription desc = waitForState(conn,streamName,"ACTIVE",true);
-        return desc.getStreamName();
+        if(desc!=null) return desc.getStreamName();
+        return "";  //this will not happen as waitForState will not return null while throwOnError is true
     };
 
     public static void deleteTestStream(AmazonKinesis conn, String streamName) {
@@ -51,10 +52,10 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        AmazonKinesis conn=AmazonKinesisClientBuilder.defaultClient();
+        final AmazonKinesis conn=AmazonKinesisClientBuilder.defaultClient();
         final String createdStreamName = createTestStream(conn);
 
-        RecordProcessorThread threadList[] = new RecordProcessorThread[threads];
+        final RecordProcessorThread threadList[] = new RecordProcessorThread[threads];
 
         logger.info("Starting up " + threads + " consumer threads...");
         for(int t=0;t<threads;t++){
@@ -65,17 +66,30 @@ public class Main {
 
         logger.info("Thread startup done.");
 
+        Runtime.getRuntime().addShutdownHook(new Thread()
+        {
+            @Override
+            public void run()
+            {
+                shutdown(conn,createdStreamName,threadList);
+            }
+        });
+
         try {
             Thread.sleep(5000);
         } catch(InterruptedException e){
             logger.warn("timeout interrupted");
         }
 
+    }
+
+    public static void shutdown(AmazonKinesis conn, String createdStreamName, RecordProcessorThread threadList[]) {
         logger.info("Shutting down threads...");
         for(int t=0;t<threads;t++){
             threadList[t].shutdown();
         }
 
+        logger.info("Waiting for termination...");
         for(int t=0;t<threads;t++){
             try {
                 threadList[t].join(10000);
@@ -84,6 +98,7 @@ public class Main {
             }
         }
 
+        logger.info("Deleting test stream...");
         deleteTestStream(conn, createdStreamName);
         try {
             waitForState(conn, createdStreamName, "DELETED", true);

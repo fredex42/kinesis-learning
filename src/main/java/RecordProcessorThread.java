@@ -21,7 +21,9 @@ public class RecordProcessorThread extends Thread {
     }
 
     public void shutdown() {
+        logger.debug("worker.shutdown() called");
         worker.shutdown();
+        logger.debug("worker.shutdown() returned");
     }
 
     public void run() {
@@ -43,5 +45,6 @@ public class RecordProcessorThread extends Thread {
 
         worker.run();
 
+        logger.info("worker.run() returned");
     }
 }
